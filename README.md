@@ -4,7 +4,7 @@
 # Installation
 To install *zifalsnm* you need to first install *devtool* package. The steps are given below.
 
-```{r setup}
+```r 
 if (!require(devtools)) {
     install.packages("devtools")
     library(devtools)
