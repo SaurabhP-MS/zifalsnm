@@ -1,7 +1,7 @@
 Package: zifalsnm
 Title: Zero-Inflated Factor Analysis Logistic Skew Normal Multinomial
     (ZIFA-LSNM) Model
-Version: 0.0.0.9000
+Version: 0.1.0
 Authors@R: c(
     person("Saurabh", "Panchasara", , "saupan@yorku.ca", role = c("aut", "cre")),
     person("Hanna", "Jankowski", , "hkj@yorku.ca", role = "aut"),
@@ -13,10 +13,10 @@ Description: ZIFA-LSNM model's objective is to achieve effective dimension
     skew-normal priors on the latent factors to explicitly model skewness
     in log-ratio transformation.
 License: GPL (>= 3)
-Depends: R (>= 4.5.0)
+Depends: R (>= 4.0.0)
 Imports: 
     sn (>= 2.1.1),
-    stats (>= 4.5.1)
+    stats
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.3
+RoxygenNote: 7.3.1

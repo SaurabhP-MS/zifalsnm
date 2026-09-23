@@ -2,57 +2,85 @@
 % Please edit documentation in R/zifalsnm.R
 \name{ZIFA_LSNM}
 \alias{ZIFA_LSNM}
-\title{Zero Inflated Factor Analysis Logistic Skew Normal Multinomial (ZIFA - LSNM) model}
+\title{Zero Inflated Factor Analysis Logistic Skew Normal Multinomial (ZIFA-LSNM) model}
 \usage{
 ZIFA_LSNM(
   X,
-  num_fac = 2,
-  NU1P = 1,
-  NU2P = 3,
-  G1P = 200,
-  G2P = 1/200,
-  AlphaP = 2
+  number_of_factors = 2,
+  epsilon = 5e-05,
+  NU1Prior = 1,
+  NU2Prior = 3,
+  G1Prior = 200,
+  G2Prior = 1/200,
+  AlphaPrior = 2,
+  Max_Iter = 200,
+  verbose = TRUE
 )
 }
 \arguments{
-\item{X}{Count matrix of samples and taxa.}
+\item{X}{Count matrix with samples in rows and taxa in columns. The last
+column is used as the reference taxon for the log-ratio transformation.
+Taxa with only zero counts should be removed before fitting the model.}
 
-\item{num_fac}{Number of latent factors.}
+\item{number_of_factors}{Number of latent factors \eqn{K}.}
 
-\item{NU1P}{Prior value for the shape parameter of \eqn{\kappa_j}.}
+\item{epsilon}{Convergence tolerance: the algorithm stops when the absolute
+relative change in the ELBO between two iterations is below \code{epsilon}.}
 
-\item{NU2P}{Prior value for the shape parameter of \eqn{\kappa_j}.}
+\item{NU1Prior}{Prior value for the first shape parameter of \eqn{\kappa_j}.}
 
-\item{G1P}{Prior value for the shape parameter of \eqn{\delta_{jt}}.}
+\item{NU2Prior}{Prior value for the second shape parameter of \eqn{\kappa_j}.}
 
-\item{G2P}{Prior value for the rate parameter of \eqn{\delta_{jt}}.}
+\item{G1Prior}{Prior value for the shape parameter of \eqn{\delta_{jt}}.}
 
-\item{AlphaP}{Prior value for the skewness parameter of latent factors \eqn{F_{it}}.}
+\item{G2Prior}{Prior value for the rate parameter of \eqn{\delta_{jt}}.}
+
+\item{AlphaPrior}{Prior value for the skewness parameter of the latent
+factors \eqn{F_{it}}.}
+
+\item{Max_Iter}{Maximum number of CAVI iterations.}
+
+\item{verbose}{If \code{TRUE}, progress messages are printed at every iteration.}
 }
 \value{
-Returns optimized values
+A list with the optimized variational parameters:
+\describe{
+\item{Pi_ij}{Estimated zero-inflation indicators (\eqn{N \times (P-1)}).}
+\item{Tau_1, Tau_2}{Variational Beta parameters for \eqn{\kappa_j}.}
+\item{R, Lambda}{Variational mean and variance of the factor loadings.}
+\item{G1, G2}{Variational Gamma parameters for \eqn{\delta_{jt}}.}
+\item{Xi, Omega, Alpha}{Variational skew-normal location, scale and
+skewness of the latent factors.}
+\item{A0, C0}{Variational mean and variance of the intercepts \eqn{\beta_{0j}}.}
+\item{Estimated_Compositions}{Estimated compositions (\eqn{N \times P});
+the last column is the reference taxon.}
+\item{ELBO_Trace}{ELBO value at each iteration.}
+\item{*_Trace}{Values of each variational parameter at each iteration.}
+}
 }
 \description{
 ZIFA-LSNM model's objective is to achieve effective dimension
 reduction to manage high dimensionality, accounting for the microbiome
 data compositional nature, zero inflation and, it utilizes
 skew-normal priors on the latent factors to explicitly model skewness
-in log-ratio transformation.
+in log-ratio transformation. The model is fitted by coordinate ascent
+variational inference (CAVI).
 }
 \examples{
 \donttest{
-N <- 50
-P <- 50
-K <- 2
+set.seed(1)
+N <- 50 # Number of samples
+P <- 50 # Number of taxa
+K <- 2  # Number of factors
 
+# Latent factors
 alpha_prior <- 2
 alpha_star <- -sqrt(2 / pi) * (alpha_prior / sqrt(1 + alpha_prior^2))
 f <- matrix(sn::rsn(N * K, alpha_star, 1, alpha_prior), N, K, TRUE)
 
+# Factor loadings
 beta <- matrix(runif(P * K, -2.5, 2.5), nrow = P, ncol = K, byrow = TRUE)
-
 kappa <- runif(P)
-
 beta_0 <- runif(P, -2, 2)
 
 z <- matrix(0, N, P, byrow = TRUE)
@@ -60,13 +88,19 @@ for (i in 1:N) {
   z[i, ] <- rbinom(P, size = 1, prob = kappa)
 }
 linear_predictor <- matrix(beta_0, N, P, byrow = TRUE) + tcrossprod(f, beta)
-rho <- (1 - z) * exp(linear_predictor) / (rowSums((1 - z) * exp(linear_predictor)) + 1e-8)
+rho <- (1 - z) * exp(linear_predictor) /
+  (rowSums((1 - z) * exp(linear_predictor)) + 1e-8)
 
 cmat <- matrix(0, N, P)
-
-for (i in 1:N) cmat[i, ] <- rmultinom(1, as.integer(runif(1, 80000, 100000)), prob = rho[i, ])
-
-OUTPUT <- ZIFA_LSNM(X = cmat, num_fac = K, NU1P = 1, NU2P = 3, G1P = 200, G2P = 1 / 200, AlphaP = 2)
+for (i in 1:N) {
+  cmat[i, ] <- rmultinom(1, as.integer(runif(1, 80000, 100000)), prob = rho[i, ])
 }
 
+# Remove taxa with only zero counts before fitting the model
+cmat <- cmat[, colSums(cmat) > 0]
+
+OUTPUT <- ZIFA_LSNM(X = cmat, number_of_factors = K, epsilon = 5e-5,
+                    NU1Prior = 1, NU2Prior = 3, G1Prior = 200,
+                    G2Prior = 1 / 200, AlphaPrior = 2, Max_Iter = 200)
+}
 }
