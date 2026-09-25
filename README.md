@@ -13,7 +13,7 @@ library(zifalsnm)
 ```
 
 # Implementation
-Below is an example on how to implement it. The last column of the count matrix `X` is used as the reference taxon. Taxa with only zero counts should be removed before fitting the model.
+Below is an example on how to implement it. The last column of the count matrix `X` is used as the reference taxon.
 
 ```r
 
