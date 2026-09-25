@@ -8,7 +8,6 @@ To install *zifalsnm* you need to first install the *remotes* (or *devtools*) pa
 if (!requireNamespace("remotes", quietly = TRUE)) {
   install.packages("remotes")
 }
-options(timeout = max(1200, getOption("timeout")))
 remotes::install_github("SaurabhP-MS/zifalsnm", dependencies = TRUE)
 library(zifalsnm)
 ```
